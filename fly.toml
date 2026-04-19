@@ -2,18 +2,16 @@ app = "bepart-app"
 primary_region = "syd"
 
 [build]
-  dockerfile = "./Dockerfile"
-  
-[build.env]
-  NEXT_PUBLIC_SUPABASE_URL = "https://mucharakuigyoujwlgyp.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11Y2hhcmFrdWlneW91andsZ3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NzUyMDgsImV4cCI6MjA5MjE1MTIwOH0.zetCKEhsC_oFtSpXLF724v2TVx8GW24PGi5ZuDWi_A4"
+  [build.args]
+    NEXT_PUBLIC_SUPABASE_URL = "https://mucharakuigyoujwlgyp.supabase.co"
+    NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11Y2hhcmFrdWlneW91andsZ3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NzUyMDgsImV4cCI6MjA5MjE1MTIwOH0.zetCKEhsC_oFtSpXLF724v2TVx8GW24PGi5ZuDWi_A4"
 
 [env]
   PORT = "3000"
   NODE_ENV = "production"
   NEXT_PUBLIC_SUPABASE_URL = "https://mucharakuigyoujwlgyp.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11Y2hhcmFrdWlneW91andsZ3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NzUyMDgsImV4cCI6MjA5MjE1MTIwOH0.zetCKEhsC_oFtSpXLF724v2TVx8GW24PGi5ZuDWi_A4"
-  NEXT_PUBLIC_APP_URL = "https://bepart-app.fly.dev"
+  NEXT_PUBLIC_APP_URL = "https://bepart.ai"
 
 [http_service]
   internal_port = 3000
