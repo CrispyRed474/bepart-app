@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Users, Link2, Mail } from 'lucide-react'
