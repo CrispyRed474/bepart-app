@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -10,7 +12,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { Microphone, Upload, X, AlertTriangle } from 'lucide-react'
+import { Mic, Upload, X, AlertTriangle } from 'lucide-react'
 
 type EntryType = 'meal' | 'activity' | 'medication' | 'incident' | 'note' | 'photo' | 'hygiene'
 type Severity = 'low' | 'medium' | 'high' | 'critical'
@@ -246,7 +248,7 @@ export default function LogEntryPage({ params }: { params: { id: string } }) {
               onClick={isRecording ? stopRecording : startRecording}
               className="flex items-center gap-2"
             >
-              <Microphone className="w-4 h-4" />
+              <Mic className="w-4 h-4" />
               {isRecording ? 'Stop Recording' : 'Voice Note'}
             </Button>
             {transcribedText && (
