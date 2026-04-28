@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'BePart — NDIS & Aged Care Companion',
-  description: 'Connect care workers with families for NDIS and aged care clients',
+  title: 'NDIS & Aged Care Communication App | BePart',
+  description: 'Free communication app for NDIS and aged care. Real-time family updates, voice logging, compliance documentation. Australian data hosting.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

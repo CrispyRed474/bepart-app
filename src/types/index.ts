@@ -62,3 +62,16 @@ export interface FamilyClientLink {
   created_at: string
   client?: Client
 }
+
+export interface FamilyConsent {
+  id: string
+  client_id: string
+  family_user_id: string
+  org_id: string
+  consent_given: boolean
+  consent_given_by?: string
+  consent_given_at?: string
+  consent_reason?: string
+  created_at: string
+  updated_at: string
+}

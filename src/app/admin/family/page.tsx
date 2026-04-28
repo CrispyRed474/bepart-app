@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { ManageFamilyLinks } from './ManageFamilyLinks'
+import { ConsentGate } from './ConsentGate'
 
 export default async function AdminFamilyPage() {
   const supabase = await createClient()
@@ -62,18 +63,27 @@ export default async function AdminFamilyPage() {
                       {member.email}
                     </div>
 
-                    {/* Linked clients */}
+                    {/* Linked clients with consent status */}
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 mb-1">
                         <Link2 className="w-3 h-3 inline mr-1" />
                         Linked clients:
                       </p>
                       {memberLinks.length > 0 ? (
-                        <div className="flex gap-1.5 flex-wrap">
+                        <div className="space-y-3">
                           {memberLinks.map(link => (
-                            <Badge key={link.id} variant="success">
-                              {(link.client as any)?.full_name}
-                            </Badge>
+                            <div key={link.id}>
+                              <Badge variant="success" className="mb-2">
+                                {(link.client as any)?.full_name}
+                              </Badge>
+                              <ConsentGate
+                                clientId={link.client_id}
+                                clientName={(link.client as any)?.full_name || 'Client'}
+                                familyUserId={member.id}
+                                familyUserName={member.full_name}
+                                orgId={profile.org_id}
+                              />
+                            </div>
                           ))}
                         </div>
                       ) : (
@@ -84,6 +94,7 @@ export default async function AdminFamilyPage() {
                     {/* Manage links */}
                     <ManageFamilyLinks
                       familyUserId={member.id}
+                      familyUserName={member.full_name}
                       orgId={profile.org_id}
                       clients={clients ?? []}
                       currentLinks={memberLinks}

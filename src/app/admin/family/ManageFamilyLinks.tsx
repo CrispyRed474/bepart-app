@@ -6,15 +6,17 @@ import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { ConsentGate } from './ConsentGate'
 
 interface Props {
   familyUserId: string
+  familyUserName: string
   orgId: string
   clients: { id: string; full_name: string }[]
-  currentLinks: { id: string; client_id: string }[]
+  currentLinks: { id: string; client_id: string; client: any }[]
 }
 
-export function ManageFamilyLinks({ familyUserId, orgId, clients, currentLinks }: Props) {
+export function ManageFamilyLinks({ familyUserId, familyUserName, orgId, clients, currentLinks }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const [adding, setAdding] = useState(false)
@@ -58,32 +60,44 @@ export function ManageFamilyLinks({ familyUserId, orgId, clients, currentLinks }
   }
 
   return (
-    <div className="flex gap-2 items-end mt-2">
-      <Select
-        value={selectedClientId}
-        onChange={(e) => setSelectedClientId(e.target.value)}
-        className="flex-1"
-      >
-        <option value="">Select client...</option>
-        {unlinkedClients.map(c => (
-          <option key={c.id} value={c.id}>{c.full_name}</option>
-        ))}
-      </Select>
-      <Button
-        size="sm"
-        loading={loading}
-        onClick={handleAdd}
-        disabled={!selectedClientId}
-      >
-        Link
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => setAdding(false)}
-      >
-        <X className="w-4 h-4" />
-      </Button>
+    <div className="space-y-3 mt-2">
+      <div className="flex gap-2 items-end">
+        <Select
+          value={selectedClientId}
+          onChange={(e) => setSelectedClientId(e.target.value)}
+          className="flex-1"
+        >
+          <option value="">Select client...</option>
+          {unlinkedClients.map(c => (
+            <option key={c.id} value={c.id}>{c.full_name}</option>
+          ))}
+        </Select>
+        <Button
+          size="sm"
+          loading={loading}
+          onClick={handleAdd}
+          disabled={!selectedClientId}
+        >
+          Link
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setAdding(false)}
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      
+      {selectedClientId && (
+        <ConsentGate
+          clientId={selectedClientId}
+          clientName={clients.find(c => c.id === selectedClientId)?.full_name || 'Client'}
+          familyUserId={familyUserId}
+          familyUserName={familyUserName}
+          orgId={orgId}
+        />
+      )}
     </div>
   )
 }
