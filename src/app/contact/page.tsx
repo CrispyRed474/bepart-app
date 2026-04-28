@@ -18,7 +18,7 @@ export default function ContactPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form
-            action="https://formspree.io/f/br14n@elfloors.com.au"
+            action="mailto:br14n@elfloors.com.au" encType="multipart/form-data"
             method="POST"
           >
             <div className="space-y-5">
