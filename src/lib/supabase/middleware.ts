@@ -31,8 +31,8 @@ export async function updateSession(request: NextRequest) {
   const pathname = url.pathname
 
   // Public paths that don't need auth
-  const publicPaths = ['/auth/login', '/auth/signup', '/auth/callback', '/']
-  const isPublic = publicPaths.some(p => pathname.startsWith(p))
+  const publicPaths = ['/auth/login', '/auth/signup', '/auth/callback', '/', '/pricing', '/features', '/blog', '/contact']
+  const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   if (!user && !isPublic) {
     url.pathname = '/auth/login'
