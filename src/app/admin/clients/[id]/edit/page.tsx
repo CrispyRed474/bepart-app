@@ -26,6 +26,10 @@ export default function EditClientPage() {
     care_type: 'ndis',
     notes: '',
     is_active: true,
+    allergies: [] as string[],
+    dietary_restrictions: [] as string[],
+    medical_conditions: [] as string[],
+    care_plan_notes: '',
   })
 
   useEffect(() => {
@@ -38,14 +42,34 @@ export default function EditClientPage() {
           care_type: data.care_type,
           notes: data.notes ?? '',
           is_active: data.is_active,
+          allergies: data.allergies ?? [],
+          dietary_restrictions: data.dietary_restrictions ?? [],
+          medical_conditions: data.medical_conditions ?? [],
+          care_plan_notes: data.care_plan_notes ?? '',
         })
       }
       setFetching(false)
     })
   }, [id])
 
-  const set = (field: string, value: string | boolean) =>
+  const set = (field: string, value: string | boolean | string[]) =>
     setForm(prev => ({ ...prev, [field]: value }))
+
+  const addArrayItem = (field: 'allergies' | 'dietary_restrictions' | 'medical_conditions', value: string) => {
+    if (value.trim()) {
+      setForm(prev => ({
+        ...prev,
+        [field]: [...(prev[field] || []), value]
+      }))
+    }
+  }
+
+  const removeArrayItem = (field: 'allergies' | 'dietary_restrictions' | 'medical_conditions', index: number) => {
+    setForm(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +85,10 @@ export default function EditClientPage() {
         care_type: form.care_type,
         notes: form.notes || null,
         is_active: form.is_active,
+        allergies: form.allergies.length > 0 ? form.allergies : null,
+        dietary_restrictions: form.dietary_restrictions.length > 0 ? form.dietary_restrictions : null,
+        medical_conditions: form.medical_conditions.length > 0 ? form.medical_conditions : null,
+        care_plan_notes: form.care_plan_notes || null,
       })
       .eq('id', id)
 
@@ -107,6 +135,138 @@ export default function EditClientPage() {
           />
           <Input label="NDIS number" value={form.ndis_number} onChange={e => set('ndis_number', e.target.value)} />
           <Textarea label="Notes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={4} />
+
+          {/* Medical & Care Profile Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Medical & Care Profile</h3>
+            <p className="text-xs text-gray-500 mb-4">Information used by the AI safety scanning system to flag potential care concerns.</p>
+
+            {/* Allergies */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Allergies</label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  id="allergies-input"
+                  placeholder="Enter allergy (e.g., peanuts)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement
+                      addArrayItem('allergies', input.value)
+                      input.value = ''
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('allergies-input') as HTMLInputElement
+                    addArrayItem('allergies', input.value)
+                    input.value = ''
+                  }}
+                  className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {form.allergies.map((allergy, i) => (
+                  <span key={i} className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    {allergy}
+                    <button type="button" onClick={() => removeArrayItem('allergies', i)} className="text-blue-600 hover:text-blue-900">
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Dietary Restrictions */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Dietary Restrictions</label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  id="dietary-input"
+                  placeholder="Enter dietary restriction (e.g., vegan)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement
+                      addArrayItem('dietary_restrictions', input.value)
+                      input.value = ''
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('dietary-input') as HTMLInputElement
+                    addArrayItem('dietary_restrictions', input.value)
+                    input.value = ''
+                  }}
+                  className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {form.dietary_restrictions.map((restriction, i) => (
+                  <span key={i} className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    {restriction}
+                    <button type="button" onClick={() => removeArrayItem('dietary_restrictions', i)} className="text-green-600 hover:text-green-900">
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Medical Conditions */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Medical Conditions</label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  id="medical-input"
+                  placeholder="Enter medical condition (e.g., diabetes)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement
+                      addArrayItem('medical_conditions', input.value)
+                      input.value = ''
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('medical-input') as HTMLInputElement
+                    addArrayItem('medical_conditions', input.value)
+                    input.value = ''
+                  }}
+                  className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {form.medical_conditions.map((condition, i) => (
+                  <span key={i} className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                    {condition}
+                    <button type="button" onClick={() => removeArrayItem('medical_conditions', i)} className="text-yellow-600 hover:text-yellow-900">
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Care Plan Notes */}
+            <Textarea
+              label="Care Plan Notes"
+              value={form.care_plan_notes}
+              onChange={e => set('care_plan_notes', e.target.value)}
+              rows={4}
+              placeholder="Overview of care plan, important notes for staff..."
+            />
+          </div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <input

@@ -78,11 +78,12 @@ export default function FamilyFeedPage() {
         const linkedClient = familyLink.client as Client
         setClient(linkedClient)
 
-        // Get care log entries
+        // Get care log entries (only approved or auto_approved for families)
         const { data: entriesData } = await supabase
           .from('care_log_entries')
           .select('*')
           .eq('client_id', linkedClient.id)
+          .in('status', ['approved', 'auto_approved'])
           .order('logged_at', { ascending: false })
           .limit(50)
 
