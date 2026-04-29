@@ -1,15 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@supabase/supabase-js';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+import { Button } from '@/components/ui/Button';
+import { createClient } from '@/lib/supabase/client';
 
 const PLANS = [
   {
@@ -75,28 +69,22 @@ const PLANS = [
 
 export default function PricingPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const checkAuth = async () => {
+  const handleStartTrial = async (planName: string) => {
+    try {
+      setLoading(true);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setUser(user);
-    };
 
-    checkAuth();
-  }, []);
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
-  const handleStartTrial = async (planName: string) => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    setLoading(true);
-    try {
       // Get user's organisation
       const { data: userOrg } = await supabase
         .from('organisation_members')
@@ -117,7 +105,6 @@ export default function PricingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan: planName,
-          add_ai_screening: false,
           org_id: userOrg.organisation_id,
         }),
       });
@@ -129,7 +116,6 @@ export default function PricingPage() {
     } catch (error) {
       console.error('Error:', error);
       alert('Failed to start trial. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -144,71 +130,85 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {/* Add-on */}
-      <div className="text-center">
-        <p className="text-sm font-medium text-gray-700">
-          Add AI Screening to any plan for <span className="text-lg font-bold">$29/mo</span>
-        </p>
-      </div>
-
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {PLANS.map((plan) => (
-          <Card
+          <div
             key={plan.name}
-            className={`flex flex-col ${plan.popular ? 'border-2 border-blue-600 md:scale-105' : ''}`}
+            className={`bg-white rounded-xl border p-6 flex flex-col ${
+              plan.popular ? 'border-2 border-blue-600 md:scale-105 shadow-lg' : 'border-gray-200'
+            }`}
           >
+            {/* Popular Badge */}
             {plan.popular && (
-              <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm font-semibold rounded-t-lg">
-                MOST POPULAR
+              <div className="mb-4">
+                <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                  MOST POPULAR
+                </span>
               </div>
             )}
-            <CardHeader>
-              <CardTitle>{plan.title}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-6">
-              {/* Price */}
-              <div>
-                <p className="text-4xl font-bold">{plan.price}</p>
-                <p className="text-sm text-gray-600">per month</p>
-              </div>
 
-              {/* Clients limit */}
-              <p className="text-sm font-medium text-gray-700">{plan.clients}</p>
+            {/* Plan Name & Description */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold">{plan.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
+            </div>
 
-              {/* Features */}
-              <ul className="space-y-3">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm">
-                    <svg
-                      className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            {/* Price */}
+            <div className="mb-6">
+              <p className="text-4xl font-bold">{plan.price}</p>
+              <p className="text-sm text-gray-600">per month</p>
+            </div>
 
-              {/* CTA Button */}
-              <Button
-                onClick={() => handleStartTrial(plan.name)}
-                disabled={loading}
-                className="w-full"
-                variant={plan.popular ? 'default' : 'outline'}
-              >
-                {loading ? 'Loading...' : 'Start 14-Day Free Trial'}
-              </Button>
-            </CardContent>
-          </Card>
+            {/* Clients Limit */}
+            <p className="text-sm font-medium text-gray-700 mb-6 pb-6 border-b">{plan.clients}</p>
+
+            {/* Features */}
+            <ul className="space-y-3 mb-8 flex-1">
+              {plan.features.map((feature, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  <svg
+                    className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA Button */}
+            <button
+              onClick={() => handleStartTrial(plan.name)}
+              disabled={loading}
+              className={`w-full px-4 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                plan.popular
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              {loading ? 'Loading...' : 'Start 14-Day Free Trial'}
+            </button>
+          </div>
         ))}
+      </div>
+
+      {/* AI Screening Add-on Section */}
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-8 text-center">
+          <h2 className="text-2xl font-bold mb-2">AI Screening Add-on</h2>
+          <p className="text-gray-600 mb-4">Available on all plans</p>
+          <p className="text-4xl font-bold text-blue-600 mb-4">$29<span className="text-lg text-gray-600">/mo</span></p>
+          <p className="text-gray-700">
+            Enhance any plan with our AI-powered screening tool for automated case analysis and recommendations.
+          </p>
+        </div>
       </div>
 
       {/* FAQ */}
@@ -227,7 +227,7 @@ export default function PricingPage() {
             },
             {
               q: 'What happens when my trial ends?',
-              a: 'We\'ll send you a reminder email. Your plan will be paused until you add a payment method. No charges will be made.',
+              a: "We'll send you a reminder email. Your plan will be paused until you add a payment method. No charges will be made.",
             },
             {
               q: 'Can I cancel my subscription?',
