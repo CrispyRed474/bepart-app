@@ -164,13 +164,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Trigger AI scan
-    const aiScanResult = await scanNoteWithAI(description, client_id, supabase)
+    // Check if org has AI screening enabled
+    const { data: org } = await supabase
+      .from('organisations')
+      .select('ai_screening_enabled')
+      .eq('id', profile.org_id)
+      .single()
 
-    // Determine initial status based on AI scan
+    // Trigger AI scan only if enabled
+    let aiScanResult: AIScanResult = { flagged: false, issues: [], severity: 'low' }
     let status = 'pending'
-    if (aiScanResult.flagged) {
-      status = 'flagged'
+
+    if (org?.ai_screening_enabled) {
+      // AI Screening add-on is enabled: scan and flag if issues found
+      aiScanResult = await scanNoteWithAI(description, client_id, supabase)
+      if (aiScanResult.flagged) {
+        status = 'flagged'
+      }
+    } else {
+      // AI Screening is not enabled: skip AI scan, all notes go to manual review
+      status = 'pending'
     }
 
     // Create care log entry

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { AlertCircle, CheckCircle, XCircle, Clock, Info } from 'lucide-react'
 import clsx from 'clsx'
 
 interface FlaggedNote {
@@ -32,11 +32,43 @@ export default function NotesReviewPage() {
   const [selectedNote, setSelectedNote] = useState<FlaggedNote | null>(null)
   const [editDescription, setEditDescription] = useState('')
   const [actionInProgress, setActionInProgress] = useState<string | null>(null)
+  const [aiScreeningEnabled, setAiScreeningEnabled] = useState(false)
 
-  // Fetch flagged notes
+  // Fetch notes based on AI screening status
   useEffect(() => {
     const fetchNotes = async () => {
       setLoading(true)
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('org_id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!profile) {
+        setLoading(false)
+        return
+      }
+
+      // Check if org has AI screening enabled
+      const { data: org } = await supabase
+        .from('organisations')
+        .select('ai_screening_enabled')
+        .eq('id', profile.org_id)
+        .single()
+
+      setAiScreeningEnabled(org?.ai_screening_enabled || false)
+
+      // If AI screening enabled, show only flagged notes; otherwise show all pending notes
+      const statusToQuery = org?.ai_screening_enabled ? 'flagged' : 'pending'
 
       let query = supabase
         .from('care_log_entries')
@@ -54,7 +86,8 @@ export default function NotesReviewPage() {
           carer:profiles(full_name)
         `
         )
-        .eq('status', 'flagged')
+        .eq('status', statusToQuery)
+        .eq('org_id', profile.org_id)
         .order('created_at', { ascending: false })
 
       // Apply date filters
@@ -73,6 +106,7 @@ export default function NotesReviewPage() {
 
       if (error) {
         console.error('Error fetching notes:', error)
+        setLoading(false)
         return
       }
 
@@ -211,7 +245,7 @@ export default function NotesReviewPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading flagged notes...</p>
+          <p className="text-gray-600">Loading notes...</p>
         </div>
       </div>
     )
@@ -220,11 +254,25 @@ export default function NotesReviewPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Banner if AI screening is disabled */}
+        {!aiScreeningEnabled && (
+          <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-blue-900 font-medium">
+                Reviewing all notes manually. <a href="/admin/settings" className="underline font-semibold hover:text-blue-800">Upgrade to AI Screening</a> to only see flagged issues. <span className="font-semibold">$29/mo</span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Notes Review Queue</h1>
           <p className="text-gray-600">
-            {notes.length} flagged note{notes.length !== 1 ? 's' : ''} awaiting review
+            {aiScreeningEnabled
+              ? `${notes.length} flagged note${notes.length !== 1 ? 's' : ''} awaiting review`
+              : `${notes.length} note${notes.length !== 1 ? 's' : ''} awaiting manual review`}
           </p>
         </div>
 
@@ -241,7 +289,7 @@ export default function NotesReviewPage() {
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               )}
             >
-              {f === 'all' ? 'All Flagged' : f === 'today' ? 'Today' : 'This Week'}
+              {f === 'all' ? 'All' : f === 'today' ? 'Today' : 'This Week'}
             </button>
           ))}
         </div>
@@ -254,7 +302,7 @@ export default function NotesReviewPage() {
               {notes.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
                   <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-600" />
-                  <p>No flagged notes in this period</p>
+                  <p>{aiScreeningEnabled ? 'No flagged notes in this period' : 'No pending notes in this period'}</p>
                 </div>
               ) : (
                 <ul className="divide-y max-h-[600px] overflow-y-auto">
@@ -269,7 +317,7 @@ export default function NotesReviewPage() {
                         'p-4 cursor-pointer hover:bg-gray-50 transition-colors border-l-4',
                         selectedNote?.id === note.id
                           ? 'bg-blue-50 border-l-blue-600'
-                          : 'border-l-red-600'
+                          : aiScreeningEnabled ? 'border-l-red-600' : 'border-l-yellow-600'
                       )}
                     >
                       <p className="font-semibold text-gray-900 truncate">
@@ -291,11 +339,13 @@ export default function NotesReviewPage() {
             <div className="lg:col-span-2">
               <div className={clsx(
                 'bg-white rounded-lg shadow p-6 border-l-4',
-                selectedNote.ai_scan_result.severity === 'high'
-                  ? 'border-l-red-600'
-                  : selectedNote.ai_scan_result.severity === 'medium'
-                  ? 'border-l-yellow-600'
-                  : 'border-l-blue-600'
+                aiScreeningEnabled
+                  ? (selectedNote.ai_scan_result.severity === 'high'
+                    ? 'border-l-red-600'
+                    : selectedNote.ai_scan_result.severity === 'medium'
+                    ? 'border-l-yellow-600'
+                    : 'border-l-blue-600')
+                  : 'border-l-yellow-600'
               )}>
                 {/* Header */}
                 <div className="mb-6">
@@ -308,19 +358,21 @@ export default function NotesReviewPage() {
                         Carer: {selectedNote.carer.full_name}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getSeverityIcon(selectedNote.ai_scan_result.severity)}
-                      <span className={clsx(
-                        'px-3 py-1 rounded-full text-sm font-medium',
-                        selectedNote.ai_scan_result.severity === 'high'
-                          ? 'bg-red-100 text-red-800'
-                          : selectedNote.ai_scan_result.severity === 'medium'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                      )}>
-                        {selectedNote.ai_scan_result.severity.toUpperCase()}
-                      </span>
-                    </div>
+                    {aiScreeningEnabled && (
+                      <div className="flex items-center gap-2">
+                        {getSeverityIcon(selectedNote.ai_scan_result.severity)}
+                        <span className={clsx(
+                          'px-3 py-1 rounded-full text-sm font-medium',
+                          selectedNote.ai_scan_result.severity === 'high'
+                            ? 'bg-red-100 text-red-800'
+                            : selectedNote.ai_scan_result.severity === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-blue-100 text-blue-800'
+                        )}>
+                          {selectedNote.ai_scan_result.severity.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <p className="text-sm text-gray-500">
                     {formatDate(selectedNote.created_at)}
@@ -334,8 +386,8 @@ export default function NotesReviewPage() {
                   </h3>
                 </div>
 
-                {/* Flagged Issues */}
-                {selectedNote.ai_flagged_issues.length > 0 && (
+                {/* Flagged Issues (only shown if AI screening enabled) */}
+                {aiScreeningEnabled && selectedNote.ai_flagged_issues.length > 0 && (
                   <div className={clsx(
                     'mb-6 p-4 rounded-lg border',
                     getSeverityColor(selectedNote.ai_scan_result.severity)
